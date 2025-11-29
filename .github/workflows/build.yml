@@ -76,17 +76,19 @@ jobs:
           ANDROID_NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-path }}
         run: |
           cd frida
-          make core-android-arm64
+          ./configure --host=android-arm64
+          cd build/frida-android-arm64
+          ninja frida-core
 
       # 9. Run Anti-Anti-Frida (Symbol Hiding)
       - name: Obfuscate Symbols
         run: |
           # Define paths based on build output structure
-          AGENT="frida/build/tmp-android-arm64/frida-core/lib/agent/frida-agent.so"
-          GADGET="frida/build/tmp-android-arm64/frida-core/lib/gadget/frida-gadget.so"
-          INJECT="frida/build/frida-android-arm64/bin/frida-inject"
-          PORTAL="frida/build/frida-android-arm64/bin/frida-portal"
-          SERVER="frida/build/frida-android-arm64/bin/frida-server"
+          AGENT="frida/build/frida-android-arm64/subprojects/frida-core/lib/agent/frida-agent.so"
+          GADGET="frida/build/frida-android-arm64/subprojects/frida-core/lib/gadget/frida-gadget.so"
+          INJECT="frida/build/frida-android-arm64/subprojects/frida-core/src/frida-inject"
+          PORTAL="frida/build/frida-android-arm64/subprojects/frida-core/src/frida-portal"
+          SERVER="frida/build/frida-android-arm64/subprojects/frida-core/server/frida-server"
           
           # Run the script from the stealth-repo directory
           python frida/frida-core/src/anti-anti-frida.py $AGENT $GADGET $INJECT $PORTAL $SERVER
@@ -97,8 +99,8 @@ jobs:
         with:
           name: frida-stealth-16.2.2-arm64
           path: |
-            frida/build/tmp-android-arm64/frida-core/lib/agent/frida-agent.so
-            frida/build/tmp-android-arm64/frida-core/lib/gadget/frida-gadget.so
-            frida/build/frida-android-arm64/bin/frida-inject
-            frida/build/frida-android-arm64/bin/frida-portal
-            frida/build/frida-android-arm64/bin/frida-server
+            frida/build/frida-android-arm64/subprojects/frida-core/lib/agent/frida-agent.so
+            frida/build/frida-android-arm64/subprojects/frida-core/lib/gadget/frida-gadget.so
+            frida/build/frida-android-arm64/subprojects/frida-core/src/frida-inject
+            frida/build/frida-android-arm64/subprojects/frida-core/src/frida-portal
+            frida/build/frida-android-arm64/subprojects/frida-core/server/frida-server
