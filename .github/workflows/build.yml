@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-22.04
     
     steps:
-      # 1. Clean up disk space (Fixed Action Name)
+      # 1. Clean up disk space
       - name: Free Disk Space
         uses: jlumbroso/free-disk-space@v1.3.1
         with:
@@ -57,7 +57,7 @@ jobs:
       - name: Apply Patches
         run: |
           # Patch frida-core
-          cd frida/frida-core
+          cd frida/subprojects/frida-core
           git apply --reject --whitespace=fix ${{ github.workspace }}/stealth-repo/frida-core/patch.patch
           
           # Patch frida-gum
