@@ -77,18 +77,18 @@ jobs:
         run: |
           cd frida
           ./configure --host=android-arm64
-          cd build/frida-android-arm64
+          cd build
           ninja frida-core
 
       # 9. Run Anti-Anti-Frida (Symbol Hiding)
       - name: Obfuscate Symbols
         run: |
-          # Define paths based on build output structure
-          AGENT="frida/build/frida-android-arm64/subprojects/frida-core/lib/agent/frida-agent.so"
-          GADGET="frida/build/frida-android-arm64/subprojects/frida-core/lib/gadget/frida-gadget.so"
-          INJECT="frida/build/frida-android-arm64/subprojects/frida-core/src/frida-inject"
-          PORTAL="frida/build/frida-android-arm64/subprojects/frida-core/src/frida-portal"
-          SERVER="frida/build/frida-android-arm64/subprojects/frida-core/server/frida-server"
+          BUILD_BASE="frida/build/subprojects/frida-core"
+          AGENT="$BUILD_BASE/lib/agent/frida-agent.so"
+          GADGET="$BUILD_BASE/lib/gadget/frida-gadget.so"
+          INJECT="$BUILD_BASE/src/frida-inject"
+          PORTAL="$BUILD_BASE/src/frida-portal"
+          SERVER="$BUILD_BASE/server/frida-server"
           
           # Run the script from the stealth-repo directory
           python frida/frida-core/src/anti-anti-frida.py $AGENT $GADGET $INJECT $PORTAL $SERVER
@@ -99,8 +99,8 @@ jobs:
         with:
           name: frida-stealth-16.2.2-arm64
           path: |
-            frida/build/frida-android-arm64/subprojects/frida-core/lib/agent/frida-agent.so
-            frida/build/frida-android-arm64/subprojects/frida-core/lib/gadget/frida-gadget.so
-            frida/build/frida-android-arm64/subprojects/frida-core/src/frida-inject
-            frida/build/frida-android-arm64/subprojects/frida-core/src/frida-portal
-            frida/build/frida-android-arm64/subprojects/frida-core/server/frida-server
+            frida/build/subprojects/frida-core/lib/agent/frida-agent.so
+            frida/build/subprojects/frida-core/lib/gadget/frida-gadget.so
+            frida/build/subprojects/frida-core/src/frida-inject
+            frida/build/subprojects/frida-core/src/frida-portal
+            frida/build/subprojects/frida-core/server/frida-server
