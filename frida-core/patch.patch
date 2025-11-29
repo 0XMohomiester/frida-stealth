@@ -312,10 +312,10 @@ index a8db6b29..8ea740fa 100644
  		private void stop_worker_thread () {
 diff --git a/src/anti-anti-frida.py b/src/anti-anti-frida.py
 new file mode 100644
-index 00000000..47e321f6
+index 0000000..97976f0
 --- /dev/null
 +++ b/src/anti-anti-frida.py
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,45 @@
 +import lief
 +import sys
 +import random
