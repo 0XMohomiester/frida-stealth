@@ -58,11 +58,11 @@ jobs:
         run: |
           # Patch frida-core
           cd frida/frida-core
-          git apply --reject --whitespace=fix ${{ github.workspace }}/stealth-repo/frida-core/patch.patch
+          git apply --reject --whitespace=fix --exclude='.DS_Store' ${{ github.workspace }}/stealth-repo/frida-core/patch.patch
           
           # Patch frida-gum
           cd ../frida-gum
-          git apply --reject --whitespace=fix ${{ github.workspace }}/stealth-repo/frida-gum/patch.patch
+          git apply --reject --whitespace=fix --exclude='.DS_Store' ${{ github.workspace }}/stealth-repo/frida-gum/patch.patch
 
       # 8. Build Frida
       - name: Build Core (Android Arm64)
