@@ -1,0 +1,98 @@
+name: Build Stealth Frida 16.2.2
+
+on:
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  build-android-arm64:
+    runs-on: ubuntu-22.04
+    
+    steps:
+      # 1. Clean up disk space because Frida builds are HUGE
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space-action@v1.3.1
+        with:
+          tool-cache: false
+          android: false # We need Android, but we will install specific NDK later
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      # 2. Checkout your repo (containing patches and python script)
+      - name: Checkout Stealth Repo
+        uses: actions/checkout@v4
+        with:
+          path: stealth-repo
+
+      # 3. Setup Python for the obfuscation script
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
+
+      - name: Install Python Dependencies
+        run: pip install lief
+
+      # 4. Setup Node.js (Required by Frida build system)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 5. Install specific NDK version (25.2.9519653)
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r25c # r25c maps to 25.2.9519653
+
+      # 6. Clone Frida 16.2.2
+      - name: Clone Frida (v16.2.2)
+        run: |
+          git clone --recurse-submodules --branch 16.2.2 https://github.com/frida/frida.git frida
+
+      # 7. Apply Patches
+      - name: Apply Patches
+        run: |
+          # Patch frida-core
+          cd frida/frida-core
+          git apply --reject --whitespace=fix ${{ github.workspace }}/stealth-repo/frida-core/patch.patch
+          
+          # Patch frida-gum
+          cd ../frida-gum
+          git apply --reject --whitespace=fix ${{ github.workspace }}/stealth-repo/frida-gum/patch.patch
+
+      # 8. Build Frida
+      - name: Build Core (Android Arm64)
+        env:
+          ANDROID_NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-path }}
+        run: |
+          cd frida
+          make core-android-arm64
+
+      # 9. Run Anti-Anti-Frida (Symbol Hiding)
+      - name: Obfuscate Symbols
+        run: |
+          # Define paths based on build output structure
+          AGENT="frida/build/tmp-android-arm64/frida-core/lib/agent/frida-agent.so"
+          GADGET="frida/build/tmp-android-arm64/frida-core/lib/gadget/frida-gadget.so"
+          INJECT="frida/build/frida-android-arm64/bin/frida-inject"
+          PORTAL="frida/build/frida-android-arm64/bin/frida-portal"
+          SERVER="frida/build/frida-android-arm64/bin/frida-server"
+          
+          # Run the script from the stealth-repo directory
+          python stealth-repo/src/anti-anti-frida.py $AGENT $GADGET $INJECT $PORTAL $SERVER
+
+      # 10. Upload Artifacts
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frida-stealth-16.2.2-arm64
+          path: |
+            frida/build/tmp-android-arm64/frida-core/lib/agent/frida-agent.so
+            frida/build/tmp-android-arm64/frida-core/lib/gadget/frida-gadget.so
+            frida/build/frida-android-arm64/bin/frida-inject
+            frida/build/frida-android-arm64/bin/frida-portal
+            frida/build/frida-android-arm64/bin/frida-server
