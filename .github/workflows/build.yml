@@ -68,7 +68,7 @@ jobs:
         run: |
           # This command comments out "subdir('tests')" in the build file.
           # This prevents the compiler from trying to build the broken tests.
-          sed -i "s/subdir('tests')/# subdir('tests')/g" frida/frida-gum/meson.build
+          sed -i "s/subdir('tests')/# subdir('tests')/g" frida/subprojects/frida-gum/meson.build
 
       # 8. Build Frida
       - name: Build Core (Android Arm64)
