@@ -102,7 +102,7 @@ jobs:
           echo "Server: $SERVER"
           
           # Run the obfuscation
-          python "$SCRIPT" "$AGENT" "$GADGET" "$INJECT" "$PORTAL" "$SERVER"
+          python "$SCRIPT" $AGENT $GADGET $INJECT $PORTAL $SERVER
 
           # Create a nice folder for artifacts to upload
           mkdir -p stealth-artifacts
