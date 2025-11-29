@@ -83,24 +83,38 @@ jobs:
       # 9. Run Anti-Anti-Frida (Symbol Hiding)
       - name: Obfuscate Symbols
         run: |
-          BUILD_BASE="frida/build/subprojects/frida-core"
-          AGENT="$BUILD_BASE/lib/agent/frida-agent.so"
-          GADGET="$BUILD_BASE/lib/gadget/frida-gadget.so"
-          INJECT="$BUILD_BASE/src/frida-inject"
-          PORTAL="$BUILD_BASE/src/frida-portal"
-          SERVER="$BUILD_BASE/server/frida-server"
+          BUILD_ROOT="frida/build"
+          SCRIPT="frida/subprojects/frida-core/src/anti-anti-frida.py"
           
-          # Run the script from the stealth-repo directory
-          python frida/frida-core/src/anti-anti-frida.py $AGENT $GADGET $INJECT $PORTAL $SERVER
+          echo "Locating binaries..."
+          
+          # Automatically find the files to avoid path errors
+          # We use 'head -n 1' to take the first match if duplicates exist
+          AGENT=$(find $BUILD_ROOT -name "frida-agent.so" | grep "subprojects/frida-core" | head -n 1)
+          GADGET=$(find $BUILD_ROOT -name "frida-gadget.so" | grep "subprojects/frida-core" | head -n 1)
+          SERVER=$(find $BUILD_ROOT -name "frida-server" | grep "subprojects/frida-core" | head -n 1)
+          INJECT=$(find $BUILD_ROOT -name "frida-inject" | grep "subprojects/frida-core" | head -n 1)
+          PORTAL=$(find $BUILD_ROOT -name "frida-portal" | grep "subprojects/frida-core" | head -n 1)
+          
+          echo "Found:"
+          echo "Agent: $AGENT"
+          echo "Gadget: $GADGET"
+          echo "Server: $SERVER"
+          
+          # Run the obfuscation
+          python "$SCRIPT" "$AGENT" "$GADGET" "$INJECT" "$PORTAL" "$SERVER"
+
+          # Create a nice folder for artifacts to upload
+          mkdir -p stealth-artifacts
+          cp "$AGENT" stealth-artifacts/
+          cp "$GADGET" stealth-artifacts/
+          cp "$SERVER" stealth-artifacts/
+          cp "$INJECT" stealth-artifacts/
+          cp "$PORTAL" stealth-artifacts/
 
       # 10. Upload Artifacts
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: frida-stealth-16.2.2-arm64
-          path: |
-            frida/build/subprojects/frida-core/lib/agent/frida-agent.so
-            frida/build/subprojects/frida-core/lib/gadget/frida-gadget.so
-            frida/build/subprojects/frida-core/src/frida-inject
-            frida/build/subprojects/frida-core/src/frida-portal
-            frida/build/subprojects/frida-core/server/frida-server
+          path: stealth-artifacts/*
