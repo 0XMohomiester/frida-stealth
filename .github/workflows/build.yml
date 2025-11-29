@@ -57,12 +57,12 @@ jobs:
       - name: Apply Patches
         run: |
           # Patch frida-core
-          cd frida/frida-core
-          git apply --reject --whitespace=fix --exclude='.DS_Store' ${{ github.workspace }}/stealth-repo/frida-core/patch.patch
+          cd frida/subprojects/frida-core
+          git apply --reject --whitespace=fix ${{ github.workspace }}/stealth-repo/frida-core/patch.patch
           
           # Patch frida-gum
           cd ../frida-gum
-          git apply --reject --whitespace=fix --exclude='.DS_Store' --exclude='tests/*' ${{ github.workspace }}/stealth-repo/frida-gum/patch.patch
+          git apply --reject --whitespace=fix --exclude='tests/*' ${{ github.workspace }}/stealth-repo/frida-gum/patch.patch
           
       - name: Disable Frida Gum Tests
         run: |
