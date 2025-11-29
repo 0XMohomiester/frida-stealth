@@ -1,7 +1,9 @@
 import os
+import random
 import re
 import pathlib
 import argparse
+import string
 
 # ================= DEFAULT CONFIGURATION =================
 DEFAULT_PREFIX = "Banana"
@@ -135,15 +137,16 @@ def patch_linux_host_session(base_dir, dry_run=False):
         orig = content
         
         # Randomize Agent Filenames
-        search_str = 'agent = new AgentDescriptor (PathTemplate ("frida-agent-<arch>.so"),'
-        replace_str = 'var random_prefix = GLib.Uuid.string_random();\n\t\t\t' + \
-                      'agent = new AgentDescriptor (PathTemplate (random_prefix + "-<arch>.so"),'
-
-        if search_str in content:
-            content = content.replace(search_str, replace_str)
-            
-        content = content.replace('"frida-agent-arm.so"', 'random_prefix + "-arm.so"')
-        content = content.replace('"frida-agent-arm64.so"', 'random_prefix + "-arm64.so"')
+        # Generate a random 8-char string in Python
+        rand_id = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+        
+        # Replace the literal patterns
+        # 1. The generic template
+        content = content.replace('"frida-agent-<arch>.so"', f'"{rand_id}-<arch>.so"')
+        
+        # 2. The specific ARM/ARM64 instances
+        content = content.replace('"frida-agent-arm.so"', f'"{rand_id}-arm.so"')
+        content = content.replace('"frida-agent-arm64.so"', f'"{rand_id}-arm64.so"')
 
         if content != orig:
             if not dry_run:
