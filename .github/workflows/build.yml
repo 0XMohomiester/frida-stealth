@@ -57,7 +57,7 @@ jobs:
       - name: Apply Patches
         run: |
           # Patch frida-core
-          cd frida/subprojects/frida-core
+          cd frida/frida-core
           git apply --reject --whitespace=fix ${{ github.workspace }}/stealth-repo/frida-core/patch.patch
           
           # Patch frida-gum
