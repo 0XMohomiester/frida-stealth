@@ -87,25 +87,31 @@ jobs:
         run: |
           BUILD_ROOT="frida/build"
           SCRIPT="frida/subprojects/frida-core/src/anti-anti-frida.py"
+          PREFIX="${{ github.event.inputs.prefix || 'Banana' }}"
+          # Convert prefix to lowercase for filenames (e.g. Banana -> banana)
+          LOWER_PREFIX=$(echo "$PREFIX" | tr '[:upper:]' '[:lower:]')
           
           echo "Locating binaries..."
+          # Since we didn't rename targets in meson, they are still 'frida-*'
           AGENT=$(find $BUILD_ROOT -name "frida-agent.so" | grep "subprojects/frida-core" | head -n 1 || true)
           GADGET=$(find $BUILD_ROOT -name "frida-gadget.so" | grep "subprojects/frida-core" | head -n 1 || true)
           SERVER=$(find $BUILD_ROOT -name "frida-server" | grep "subprojects/frida-core" | head -n 1 || true)
           INJECT=$(find $BUILD_ROOT -name "frida-inject" | grep "subprojects/frida-core" | head -n 1 || true)
           PORTAL=$(find $BUILD_ROOT -name "frida-portal" | grep "subprojects/frida-core" | head -n 1 || true)
           
-          # Run Obfuscation
+          # Run Obfuscation (Patches internal symbols like frida_agent_main -> banana_main)
           python "$SCRIPT" $AGENT $GADGET $SERVER $INJECT $PORTAL
 
-          # Copy to artifacts
+          # Copy and RENAME artifacts
           mkdir -p stealth-artifacts
-          for f in "$AGENT" "$GADGET" "$SERVER" "$INJECT" "$PORTAL"; do
-            if [ -n "$f" ] && [ -f "$f" ]; then
-               cp "$f" stealth-artifacts/
-            fi
-          done
           
+          if [ -f "$AGENT" ]; then cp "$AGENT" "stealth-artifacts/${LOWER_PREFIX}-agent.so"; fi
+          if [ -f "$GADGET" ]; then cp "$GADGET" "stealth-artifacts/${LOWER_PREFIX}-gadget.so"; fi
+          if [ -f "$SERVER" ]; then cp "$SERVER" "stealth-artifacts/${LOWER_PREFIX}-server"; fi
+          if [ -f "$INJECT" ]; then cp "$INJECT" "stealth-artifacts/${LOWER_PREFIX}-inject"; fi
+          if [ -f "$PORTAL" ]; then cp "$PORTAL" "stealth-artifacts/${LOWER_PREFIX}-portal"; fi
+          
+          echo "Contents of artifacts folder:"
           ls -lh stealth-artifacts/
 
       - name: Upload Artifacts
