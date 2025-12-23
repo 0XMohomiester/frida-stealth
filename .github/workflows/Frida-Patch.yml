@@ -1,4 +1,4 @@
-name: Build Stealth Frida 16.6.1 (ABI + Vala Safe)
+name: Build Stealth Frida 16.6.1 (Final Vala + ABI Safe)
 
 on:
   workflow_dispatch:
@@ -62,12 +62,24 @@ jobs:
             https://github.com/frida/frida.git frida
 
       # ----------------------------------------------------
-      # FIX: Vala 0.58 breaks Frida 16.6.1 server.vala
+      # FIX 1: Remove const DEFAULT_DIRECTORY (Vala 0.58)
+      # FIX 2: Remove field initialization
+      # FIX 3: Initialize inside constructor
       # ----------------------------------------------------
-      - name: Patch Vala const assignment bug
+      - name: Patch server.vala for Vala >= 0.58
         run: |
           FILE="frida/subprojects/frida-core/server/server.vala"
+
+          # 1) Remove const
           sed -i 's/const string DEFAULT_DIRECTORY/string DEFAULT_DIRECTORY/' "$FILE"
+
+          # 2) Remove inline initialization
+          sed -i 's/private string DEFAULT_DIRECTORY =.*;/private string DEFAULT_DIRECTORY;/' "$FILE"
+
+          # 3) Inject initialization inside constructor
+          if ! grep -q 'DEFAULT_DIRECTORY =' "$FILE"; then
+            sed -i '/public Server()/a\ \ \ \ DEFAULT_DIRECTORY = "re.banana.server";' "$FILE"
+          fi
 
       - name: Apply Stealth Patches (Prefix + Ports)
         run: |
@@ -107,7 +119,6 @@ jobs:
           python "$SCRIPT" "$AGENT" "$GADGET"
 
           mkdir -p stealth-artifacts
-
           cp "$AGENT" "stealth-artifacts/${LOWER_PREFIX}-agent.so"
           cp "$GADGET" "stealth-artifacts/${LOWER_PREFIX}-gadget.so"
           cp "$SERVER" "stealth-artifacts/${LOWER_PREFIX}-server"
