@@ -56,10 +56,9 @@ jobs:
         with:
           ndk-version: r25c
 
-      - name: Clone Frida (v16.6.1)
+      - name: Clone Frida (v16.7.19)
         run: |
-          git clone --recurse-submodules --branch 16.6.1 \
-            https://github.com/frida/frida.git frida
+          git clone --recurse-submodules --branch 16.7.19 https://github.com/frida/frida.git frida
 
       # ----------------------------------------------------
       # FIX 1: Remove const DEFAULT_DIRECTORY (Vala 0.58)
