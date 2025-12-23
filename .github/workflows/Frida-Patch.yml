@@ -1,4 +1,4 @@
-name: Build Stealth Frida 16.6.1 (ABI Safe)
+name: Build Stealth Frida 16.6.1 (ABI + Vala Safe)
 
 on:
   workflow_dispatch:
@@ -58,9 +58,18 @@ jobs:
 
       - name: Clone Frida (v16.6.1)
         run: |
-          git clone --recurse-submodules --branch 16.6.1 https://github.com/frida/frida.git frida
+          git clone --recurse-submodules --branch 16.6.1 \
+            https://github.com/frida/frida.git frida
 
-      - name: Apply Stealth Patches (Ports + Prefix)
+      # ----------------------------------------------------
+      # FIX: Vala 0.58 breaks Frida 16.6.1 server.vala
+      # ----------------------------------------------------
+      - name: Patch Vala const assignment bug
+        run: |
+          FILE="frida/subprojects/frida-core/server/server.vala"
+          sed -i 's/const string DEFAULT_DIRECTORY/string DEFAULT_DIRECTORY/' "$FILE"
+
+      - name: Apply Stealth Patches (Prefix + Ports)
         run: |
           PREFIX="${{ github.event.inputs.prefix || 'Banana' }}"
           P_CONTROL="${{ github.event.inputs.port_control || '27043' }}"
@@ -80,27 +89,29 @@ jobs:
           cd build
           ninja
 
-      - name: Obfuscate Agent & Gadget ONLY (ABI SAFE)
+      # ----------------------------------------------------
+      # ABI SAFE STEALTH — DO NOT TOUCH frida-server symbols
+      # ----------------------------------------------------
+      - name: Obfuscate Agent & Gadget ONLY
         run: |
           BUILD_ROOT="frida/build"
           SCRIPT="frida/subprojects/frida-core/src/anti-anti-frida.py"
           PREFIX="${{ github.event.inputs.prefix || 'Banana' }}"
           LOWER_PREFIX=$(echo "$PREFIX" | tr '[:upper:]' '[:lower:]')
 
-          AGENT=$(find "$BUILD_ROOT" -name "frida-agent.so" | grep frida-core | head -n 1 || true)
-          GADGET=$(find "$BUILD_ROOT" -name "frida-gadget.so" | grep frida-core | head -n 1 || true)
-          SERVER=$(find "$BUILD_ROOT" -name "frida-server" | grep frida-core | head -n 1 || true)
+          AGENT=$(find "$BUILD_ROOT" -name "frida-agent.so" | grep frida-core | head -n 1)
+          GADGET=$(find "$BUILD_ROOT" -name "frida-gadget.so" | grep frida-core | head -n 1)
+          SERVER=$(find "$BUILD_ROOT" -name "frida-server" | grep frida-core | head -n 1)
 
-          echo "[+] Obfuscating agent and gadget only"
+          echo "[+] Obfuscating agent & gadget (ABI safe)"
           python "$SCRIPT" "$AGENT" "$GADGET"
 
           mkdir -p stealth-artifacts
 
-          if [ -f "$AGENT" ]; then cp "$AGENT" "stealth-artifacts/${LOWER_PREFIX}-agent.so"; fi
-          if [ -f "$GADGET" ]; then cp "$GADGET" "stealth-artifacts/${LOWER_PREFIX}-gadget.so"; fi
-          if [ -f "$SERVER" ]; then cp "$SERVER" "stealth-artifacts/${LOWER_PREFIX}-server"; fi
+          cp "$AGENT" "stealth-artifacts/${LOWER_PREFIX}-agent.so"
+          cp "$GADGET" "stealth-artifacts/${LOWER_PREFIX}-gadget.so"
+          cp "$SERVER" "stealth-artifacts/${LOWER_PREFIX}-server"
 
-          echo "[+] Final artifacts:"
           ls -lh stealth-artifacts/
 
       - name: Upload Artifacts
